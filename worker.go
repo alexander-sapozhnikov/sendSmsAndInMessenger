@@ -1,7 +1,7 @@
 package gosms
 
 import (
-	"github.com/haxpax/gosms/modem"
+	"gosms/modem"
 	"log"
 	"strings"
 	"time"
@@ -29,7 +29,7 @@ type SMS struct {
 
 // User структура пользователя с данными для отправки сообщений
 type User struct {
-	ID             int64 `json:"id"`
+	ID             int64  `json:"id"`
 	PhoneNumber    string `json:"phone_number"`
 	ChatIdTelegram string `json:"chat_id_telegram"`
 }

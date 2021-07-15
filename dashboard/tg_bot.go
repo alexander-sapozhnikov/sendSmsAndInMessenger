@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/haxpax/gosms"
 	tb "go_modules/src/gopkg.in/tucnak/telebot.v2"
+	"gosms"
 	"log"
 	"regexp"
 	"strconv"
@@ -54,9 +54,9 @@ func getPhoneNumberFromUser(m *tb.Message) {
 		}
 	}
 
-	if !isNumber && r.MatchString(m.Text){
+	if !isNumber && r.MatchString(m.Text) {
 		isNumber = true
-		number  = r.FindString(m.Text)
+		number = r.FindString(m.Text)
 	}
 
 	if !isNumber {
@@ -75,7 +75,7 @@ func getPhoneNumberFromUser(m *tb.Message) {
 	user.PhoneNumber = number
 	user.ChatIdTelegram = strconv.Itoa(int(m.Chat.ID))
 
-	if user.ID == 0{
+	if user.ID == 0 {
 		_, err = gosms.InsertUser(user)
 	} else {
 		err = gosms.UpdateUser(user)

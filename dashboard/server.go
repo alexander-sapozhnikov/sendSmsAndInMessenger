@@ -1,12 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/haxpax/gosms"
 	"github.com/satori/go.uuid"
+	"gosms"
 	"html/template"
 	"log"
 	"net/http"
@@ -68,11 +69,13 @@ func sendSMSHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	mobile := r.FormValue("mobile")
 	message := r.FormValue("message")
-	uuid := uuid.NewV1()
+	uuid, _ := uuid.NewV1()
 
 	mobile = numberToStandard(mobile)
 
 	sendMessageToTg(mobile, message)
+
+	sendMessageToWhatsUp(mobile, message)
 
 	user, err := getUserOrMakeNew(mobile)
 	if err != nil {
@@ -94,17 +97,17 @@ func sendSMSHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // numberToStandard приводим телефонный номер к виду +71112223344
-func numberToStandard(phoneNumber string) string{
+func numberToStandard(phoneNumber string) string {
 
-	if len(phoneNumber) < 3{
+	if len(phoneNumber) < 3 {
 		return phoneNumber
 	}
 
-	if phoneNumber[0] == '8'{
+	if phoneNumber[0] == '8' {
 		phoneNumber = "7" + phoneNumber[1:]
 	}
 
-	if phoneNumber[0] != '+'{
+	if phoneNumber[0] != '+' {
 		phoneNumber = "+" + phoneNumber
 	}
 
@@ -112,7 +115,7 @@ func numberToStandard(phoneNumber string) string{
 }
 
 // getUserOrMakeNew получаем или создаем пользователя
-func getUserOrMakeNew(phoneNumber string) (*gosms.User, error){
+func getUserOrMakeNew(phoneNumber string) (*gosms.User, error) {
 	user, err := gosms.GetUserByPhoneNumber(phoneNumber)
 
 	if err != nil {
@@ -123,7 +126,7 @@ func getUserOrMakeNew(phoneNumber string) (*gosms.User, error){
 		return user, nil
 	}
 	user = &gosms.User{
-		PhoneNumber:    phoneNumber,
+		PhoneNumber: phoneNumber,
 	}
 	user, err = gosms.InsertUser(user)
 	if err != nil {
@@ -134,22 +137,43 @@ func getUserOrMakeNew(phoneNumber string) (*gosms.User, error){
 
 }
 
-func sendMessageToTg(phoneNumber string, message string){
+func sendMessageToTg(phoneNumber string, message string) {
 	users, err := gosms.GetUsersByPhoneNumber(phoneNumber)
-	if err != nil{
+	if err != nil {
 		log.Printf("sendMessageToTg: %v", err)
 		return
 	}
 
-	for _, user := range users{
-		if user.ChatIdTelegram != ""{
+	for _, user := range users {
+		if user.ChatIdTelegram != "" {
 			_, err = Bot.Send(NewUserTg(user.ChatIdTelegram), message)
-			if err != nil{
+			if err != nil {
 				log.Printf("sendMessageToTg: %v", err)
 				continue
 			}
 		}
 	}
+}
+
+func sendMessageToWhatsUp(phoneNumber string, message string) {
+	var (
+		host             = "https://api.green-api.com"
+		idInstance       = "9929"
+		apiTokenInstance = "1af2ef5a2f4450904e02dff12f40dcdbb03e5e36380eac5fac"
+	)
+
+	url := fmt.Sprintf("%s/waInstance%s/sendMessage/%s", host, idInstance, apiTokenInstance)
+
+	messageWhatsUp := &MessageWhatsUp{
+		ChatId:  fmt.Sprintf("%s@c.us", phoneNumber[1:]),
+		Message: message,
+	}
+	requestByte, err := json.Marshal(messageWhatsUp)
+	log.Printf("+%v %s", requestByte, err)
+
+	resp, err := http.Post(url, "application/json", bytes.NewReader(requestByte))
+
+	log.Printf("%+v %s", resp, err)
 }
 
 // dumps JSON data, used by log view. Methods allowed: GET

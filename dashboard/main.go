@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/haxpax/gosms"
-	"github.com/haxpax/gosms/modem"
+	"gosms"
+	"gosms/modem"
 	"log"
 	"os"
 	"strconv"
